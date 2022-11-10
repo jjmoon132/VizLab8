@@ -22,50 +22,6 @@ d3.csv("driving.csv", d3.autoType).then((data) => {
         .domain(d3.extent(data, d => d.gas)).nice()
         .range([height,0]);
 
-    // ???
-    //const dollarFormat = function(d) { return '$' + d3.format(',f')(d.gas) };
-
-    const xAxis = d3.axisBottom()
-        .scale(xScale);
-    const yAxis = d3.axisLeft()
-        .scale(yScale);
-    //    .tickFormat(dollarFormat);
-
-    const points = g.selectAll("circle")
-        .data(data);
-
-    g.append("g")
-		.attr("class", "axis x-axis")
-		.attr("transform", `translate(0, ${height})`)
-		.transition()
-		.call(xAxis);
-	
-	g.append("g")
-		.attr("class", "axis y-axis")
-		.transition()
-		.call(yAxis);
-        
-    const line = d3
-        .line()
-        .x(d=>xScale(d.miles))
-        .y(d=>yScale(d.gas));
-
-    g.append("path")
-        .datum(data)
-        .attr("d",line)
-        .attr("fill","none")
-        .attr("stroke","black");
-        
-    points.enter()
-        .append("circle")
-        .attr("cx",d=>xScale(d.miles))
-        .attr("cy",d=>yScale(d.gas))
-        .attr("r",5)
-        .attr("fill","white")
-        .attr("stroke","black");
-
-
-    //issues with missing label values
     const labels = g.selectAll("text")
         .data(data);
 
@@ -78,9 +34,73 @@ d3.csv("driving.csv", d3.autoType).then((data) => {
         .each(position)
         .call(halo);
 
-    // yAxis.call(yAxis)
-    //     .call(g => g.select(".domain").remove());
+    // ???
+    //const dollarFormat = function(d) { return '$' + d3.format(',f')(d) };
 
+    //console.log(dollarFormat(data))
+    const xAxis = d3.axisBottom()
+        .scale(xScale);
+    const yAxis = d3.axisLeft()
+        .scale(yScale);
+    const points = g.selectAll("circle")
+        .data(data);
+
+    const line = d3
+        .line()
+        .x(d=>xScale(d.miles))
+        .y(d=>yScale(d.gas));
+
+    path = g.append("path")
+        .datum(data)
+        .attr("d",line)
+        .attr("fill","none")
+        .attr("stroke","black")
+        .attr("opacity", 0);
+
+    const pathlen = path.node().getTotalLength();
+    console.log(pathlen);
+
+    path.interrupt()
+      .attr("stroke-dasharray", `0,${pathlen}`)
+      .attr("opacity",1)
+      .transition()
+      .duration(5000)
+      .ease(d3.easeLinear)
+      .attr("stroke-dasharray", `${pathlen},${pathlen}`);
+        
+    points.enter()
+        .append("circle")
+        .attr("cx",d=>xScale(d.miles))
+        .attr("cy",d=>yScale(d.gas))
+        .attr("r",5)
+        .attr("fill","white")
+        .attr("stroke","black");
+
+    g.append("g")
+        .attr("transform", `translate(0, ${height})`)        .call(xAxis)
+        .call(g => g.select(".domain").remove())
+        .call(g => g.selectAll(".tick line").clone()
+            .attr("y2", -height)
+            .attr("stroke-opacity", 0.1))
+        .call(g => g.append("text")
+            .attr("x", width)
+            .attr("y", margin.bottom - 30)
+            .attr("fill", "currentColor")
+            .attr("text-anchor", "end")
+            .text("Miles per person per year"));
+  
+    g.append("g")
+        .call(yAxis)
+        .call(g => g.select(".domain").remove())
+        .call(g => g.selectAll(".tick line").clone()
+            .attr("x2", width)
+            .attr("stroke-opacity", 0.1))
+        .call(g => g.append("text")
+            .attr("x", 45-margin.left)
+            .attr("y", 10)
+            .attr("fill", "currentColor")
+            .attr("text-anchor", "start")
+            .text("Gas Prices"));
   });
 
   function position(d) {
